@@ -22,24 +22,25 @@ interface Contract {
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
+  const [refresh, setRefresh] = useState(false);
   const [newContract, setNewContract] = useState('');
   const [data, setData] = useState<Contract[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     async function fetchCheck() {
-      console.log("Initiating data breach...");
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/check`, {
           method: 'GET',
         });
         if (!response.ok) {
-          throw new Error('Network response was compromised');
+          throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        console.log('Data exfiltrated:', data);
+        console.log('Data:', data);
         setData(data.contracts);
         setLoading(false);
+        setRefresh(false);
       } catch (error) {
         console.error('Error fetching check:', error);
         setError(error as Error);
@@ -49,7 +50,7 @@ export default function Home() {
 
     console.log("fetching check");
     fetchCheck();
-  }, []);
+  }, [refresh]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,6 +80,7 @@ export default function Home() {
       })
       .then(data => {
         console.log('Posted data:', data);
+        setRefresh(true);
       })
       .catch(error => {
         console.error('Error posting check:', error);

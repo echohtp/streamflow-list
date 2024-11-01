@@ -53,6 +53,17 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!newContract) {
+      console.error('Invalid contract address:', newContract);
+      return;
+    }
+    const contract = newContract.split('/').pop();
+    if (!contract) {
+      console.error('Invalid contract address:', newContract);
+      return;
+    }
+    
     fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/check`, {
       method: 'POST',
       headers: {

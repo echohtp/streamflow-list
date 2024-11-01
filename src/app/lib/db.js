@@ -129,6 +129,26 @@ export const dbOperations = {
       console.error('Error in getContractByAddress:', error);
       throw error;
     }
+  },
+
+  updateContract: async (contractData, address) => {
+    console.log("updateContract", { address, contractData });
+    try {
+      const sanitizedData = sanitizeContractData(contractData, address);
+      
+      const { data, error } = await supabase
+        .from('contracts')
+        .update(sanitizedData)
+        .eq('address', address)
+        .select()
+        .single();
+  
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in updateContract:', error);
+      throw error;
+    }
   }
 };
 

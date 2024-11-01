@@ -182,10 +182,14 @@ function Countdown({ date }: { date: Date }) {
   const timerComponents: JSX.Element[] = [];
 
   Object.keys(timeLeft).forEach((interval) => {
+    //@ts-expect-error type error
     if (timeLeft[interval]) {
       timerComponents.push(
         <span key={interval}>
-          {timeLeft[interval]} {interval}{" "}
+          {
+            //@ts-expect-error type error
+          timeLeft[interval]
+          } {interval}{" "}
         </span>
       );
     }
@@ -193,7 +197,7 @@ function Countdown({ date }: { date: Date }) {
 
   return (
     <div>
-      {timerComponents.length ? timerComponents : <span>Time's up!</span>}
+      {timerComponents.length ? timerComponents : <span>Time&apos;s up!</span>}
     </div>
   );
 }

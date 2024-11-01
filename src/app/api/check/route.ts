@@ -3,7 +3,7 @@ import { StreamflowSolana, IGetOneData } from "@streamflow/stream";
 import { dbOperations } from "../../lib/db";
 
 const solanaClient = new StreamflowSolana.SolanaStreamClient(
-  "https://api.mainnet-beta.solana.com"
+  process.env.SOLANA_RPC || ""
 );
 
 export async function POST(request: NextRequest) {

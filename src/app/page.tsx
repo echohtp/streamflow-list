@@ -1,16 +1,28 @@
 "use client";
 import { useEffect, useState } from 'react';
 
+interface Contract {
+  id: number;
+  address: string;
+  cancelableBySender: boolean;
+  closed: boolean;
+}
+
+const baseUrl = process.env.VERCEL_URL 
+  ? `https://${process.env.VERCEL_URL}`
+  : "http://localhost:3000";
+
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [newContract, setNewContract] = useState('');
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<Contract[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     async function fetchCheck() {
       try {
-        const response = await fetch('http://localhost:3000/api/check', {
+        const response = await fetch(`${baseUrl}/api/check`, {
           method: 'GET',
         });
         if (!response.ok) {
@@ -32,7 +44,7 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    fetch('http://localhost:3000/api/check', {
+    fetch(`${process.env.BASE_URL}/api/check`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,16 +75,16 @@ export default function Home() {
             <thead>
               <tr>
                 <th className="px-4 py-2">ID</th>
-                <th className="px-4 py-2">Mint</th>
+                <th className="px-4 py-2">Address</th>
                 <th className="px-4 py-2">Cancelable By Sender</th>
                 <th className="px-4 py-2">Closed</th>
               </tr>
             </thead>
             <tbody>
-              {data?.contracts.map((contract: any) => (
+              {data?.map((contract: Contract) => (
                 <tr key={contract.id} className="bg-gray-700 border-b border-gray-600">
                   <td className="px-4 py-2">{contract.id}</td>
-                  <td className="px-4 py-2">{contract.mint}</td>
+                  <td className="px-4 py-2">{contract.address}</td>
                   <td className="px-4 py-2">{contract.cancelableBySender ? 'Yes' : 'No'}</td>
                   <td className="px-4 py-2">{contract.closed ? 'Yes' : 'No'}</td>
                 </tr>

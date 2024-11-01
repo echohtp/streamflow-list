@@ -120,7 +120,7 @@ function AddContractForm({ handleSubmit, newContract, setNewContract }: { handle
   return <form onSubmit={handleSubmit} className="mt-4">
     <input
       type="text"
-      placeholder="Contract Address"
+      placeholder="https://app.streamflow.finance/contract/solana/mainnet/..."
       value={newContract}
       onChange={(e) => setNewContract(e.target.value)}
       required

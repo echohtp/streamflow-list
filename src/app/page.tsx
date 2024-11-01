@@ -28,16 +28,16 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchCheck() {
-      console.log("fetching check");
+      console.log("Initiating data breach...");
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/check`, {
           method: 'GET',
         });
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error('Network response was compromised');
         }
         const data = await response.json();
-        console.log('Fetched data:', data);
+        console.log('Data exfiltrated:', data);
         setData(data.contracts);
         setLoading(false);
       } catch (error) {
@@ -75,19 +75,27 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white p-6 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-black text-green-500 p-6 flex flex-col items-center justify-center">
       <h1 className="text-4xl font-bold mb-6">Contract Management</h1>
       {loading ? (
         <div className="flex items-center justify-center">
-          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+          <div className="loader ease-linear rounded-full border-8 border-t-8 border-green-500 h-32 w-32"></div>
           <p className="ml-4 text-2xl">Loading...</p>
         </div>
       ) : (
         <>
-          <div className="bg-gray-800 text-white p-6 rounded-lg shadow-lg w-full max-w-4xl">
+          <div className="bg-gray-900 text-green-500 p-6 rounded-lg shadow-lg w-full max-w-4xl mb-4">
+            <p className="text-xl">
+              Total: {data ? data.reduce((total, contract) => total + (Number(contract.deposited_amount) - Number(contract.withdrawn_amount)), 0) : 0}
+            </p>
+            <p className="text-xl">
+              % of Supply: {data ? ((data.reduce((total, contract) => total + (Number(contract.deposited_amount) - Number(contract.withdrawn_amount)), 0) / 1_000_000_000_000_000) * 100).toFixed(2) : '0.000000'}%
+            </p>
+          </div>
+          <div className="bg-gray-900 text-green-500 p-6 rounded-lg shadow-lg w-full max-w-4xl">
             <ContractsTable data={data || []} />
-        </div>
-          <div className="bg-gray-800 text-white p-6 rounded-lg shadow-lg w-full max-w-4xl mt-4">
+          </div>
+          <div className="bg-gray-900 text-green-500 p-6 rounded-lg shadow-lg w-full max-w-4xl mt-4">
             <AddContractForm handleSubmit={handleSubmit} newContract={newContract} setNewContract={setNewContract} />
           </div>
         </>
@@ -105,9 +113,9 @@ function AddContractForm({ handleSubmit, newContract, setNewContract }: { handle
       value={newContract}
       onChange={(e) => setNewContract(e.target.value)}
       required
-      className="bg-gray-700 text-white p-2 rounded-lg w-full mb-2"
+      className="bg-gray-800 text-green-500 p-2 rounded-lg w-full mb-2"
     />
-    <button type="submit" className="bg-blue-500 text-white p-2 rounded-lg w-full">Add Contract</button>
+    <button type="submit" className="bg-green-500 text-black p-2 rounded-lg w-full">Add Contract</button>
   </form>
 }
 
@@ -116,35 +124,33 @@ function ContractsTable({ data }: { data: Contract[] }) {
     <thead>
       <tr>
         <th className="px-4 py-2">Name</th>
-        <th className="px-4 py-2">remaining</th>
-        <th className="px-4 py-2">end</th>
-        
+        <th className="px-4 py-2">Remaining</th>
+        <th className="px-4 py-2">End</th>
       </tr>
     </thead>
     <tbody>
       {data && data.length > 0 && data.map((contract: Contract) => (
-          <tr key={contract.created_at} className="bg-gray-700 border-b border-gray-600">
+        <tr key={contract.created_at} className="bg-gray-800 border-b border-gray-700">
           <td className="px-4 py-2">{contract.name}</td>
           <td className="px-4 py-2">{Number(contract.deposited_amount) - Number(contract.withdrawn_amount)}</td>
           <td className="px-4 py-2">
-  {(() => {
-    // Convert seconds to milliseconds for JavaScript Date
-    const endDate = new Date(contract.end * 1000);
-    const now = new Date();
-    
-    return endDate > now ? (
-      <Countdown date={endDate} />
-    ) : (
-      <span className="text-red-500">Expired</span>
-    );
-  })()}
-</td>
+            {(() => {
+              // Convert seconds to milliseconds for JavaScript Date
+              const endDate = new Date(contract.end * 1000);
+              const now = new Date();
+              
+              return endDate > now ? (
+                <Countdown date={endDate} />
+              ) : (
+                <span className="text-red-500">Expired</span>
+              );
+            })()}
+          </td>
         </tr>
       ))}
     </tbody>
   </table>;
 }
-
 
 function Countdown({ date }: { date: Date }) {
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());

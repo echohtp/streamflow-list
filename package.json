@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@streamflow/stream": "^7.0.0-alpha.19",
+    "@supabase/supabase-js": "^2.46.1",
     "better-sqlite3": "^11.5.0",
     "next": "15.0.2",
     "react": "19.0.0-rc-02c0e824-20241028",

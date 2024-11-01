@@ -6,12 +6,7 @@ interface Contract {
   address: string;
   cancelableBySender: boolean;
   closed: boolean;
-}
-
-const baseUrl = process.env.VERCEL_URL 
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
+} 
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -21,8 +16,9 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchCheck() {
+      console.log("fetching check");
       try {
-        const response = await fetch(`${baseUrl}/api/check`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/check`, {
           method: 'GET',
         });
         if (!response.ok) {
@@ -30,7 +26,7 @@ export default function Home() {
         }
         const data = await response.json();
         console.log('Fetched data:', data);
-        setData(data);
+        setData(data.contracts);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching check:', error);
@@ -39,12 +35,13 @@ export default function Home() {
       }
     }
 
+    console.log("fetching check");
     fetchCheck();
   }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    fetch(`${process.env.BASE_URL}/api/check`, {
+    fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/check`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +78,7 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {data?.map((contract: Contract) => (
+              {data && data.length > 0 && data.map((contract: Contract) => (
                 <tr key={contract.id} className="bg-gray-700 border-b border-gray-600">
                   <td className="px-4 py-2">{contract.id}</td>
                   <td className="px-4 py-2">{contract.address}</td>

@@ -1,42 +1,11 @@
 // lib/db.js
-import Database from 'better-sqlite3'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js';
 
-let db;
-
-try {
-  db = new Database(path.join(process.cwd(), 'database.db'), {
-    verbose: console.log
-  });
-  
-  db.pragma('foreign_keys = ON');
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS contracts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      createdAt INTEGER NOT NULL,
-      withdrawnAmount TEXT NOT NULL,
-      end INTEGER NOT NULL,
-      lastWithdrawnAt INTEGER NOT NULL,
-      address TEXT NOT NULL,
-      start INTEGER NOT NULL,
-      depositedAmount TEXT NOT NULL,
-      period INTEGER NOT NULL,
-      amountPerPeriod TEXT NOT NULL,
-      cliff INTEGER NOT NULL,
-      cliffAmount TEXT NOT NULL,
-      cancelableBySender INTEGER NOT NULL, -- Changed to INTEGER for boolean
-      name TEXT NOT NULL,
-      withdrawalFrequency INTEGER NOT NULL,
-      closed INTEGER NOT NULL, -- Changed to INTEGER for boolean
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-} catch (error) {
-  console.error('Database initialization error:', error);
-  throw error;
-}
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 // Sanitization helpers
 const sanitizationHelpers = {
@@ -56,9 +25,8 @@ const sanitizationHelpers = {
     return isNaN(num) ? 0 : num;
   },
 
-  // Convert boolean to integer
   sanitizeBoolean: (value) => {
-    return value ? 1 : 0;
+    return Boolean(value);
   }
 };
 
@@ -72,82 +40,96 @@ const sanitizeContractData = (contract, address) => {
   } = sanitizationHelpers;
 
   return {
-    createdAt: sanitizeTimestamp(contract.createdAt),
-    withdrawnAmount: sanitizeBigNumber(contract.withdrawnAmount),
+    created_at: new Date().toISOString(), // Use Supabase timestamp
+    created_at_unix: sanitizeTimestamp(contract.createdAt),
+    withdrawn_amount: sanitizeBigNumber(contract.withdrawnAmount),
     end: sanitizeTimestamp(contract.end),
-    lastWithdrawnAt: sanitizeTimestamp(contract.lastWithdrawnAt),
+    last_withdrawn_at: sanitizeTimestamp(contract.lastWithdrawnAt),
     address: address,
     start: sanitizeTimestamp(contract.start),
-    depositedAmount: sanitizeBigNumber(contract.depositedAmount),
+    deposited_amount: sanitizeBigNumber(contract.depositedAmount),
     period: sanitizeTimestamp(contract.period),
-    amountPerPeriod: sanitizeBigNumber(contract.amountPerPeriod),
+    amount_per_period: sanitizeBigNumber(contract.amountPerPeriod),
     cliff: sanitizeTimestamp(contract.cliff),
-    cliffAmount: sanitizeBigNumber(contract.cliffAmount),
-    cancelableBySender: sanitizeBoolean(contract.cancelableBySender), // Now returns 0 or 1
+    cliff_amount: sanitizeBigNumber(contract.cliffAmount),
+    cancelable_by_sender: sanitizeBoolean(contract.cancelableBySender),
     name: sanitizeName(contract.name),
-    withdrawalFrequency: sanitizeTimestamp(contract.withdrawalFrequency),
-    closed: sanitizeBoolean(contract.closed) // Now returns 0 or 1
+    withdrawal_frequency: sanitizeTimestamp(contract.withdrawalFrequency),
+    closed: sanitizeBoolean(contract.closed)
   };
 };
 
 // Database operations
 export const dbOperations = {
-  createContract: (contractData, address) => {
+  createContract: async (contractData, address) => {
     try {
-     
       const sanitizedData = sanitizeContractData(contractData, address);
-     
-      const stmt = db.prepare(`
-        INSERT INTO contracts (
-          createdAt, withdrawnAmount, end, lastWithdrawnAt, address,
-          start, depositedAmount, period, amountPerPeriod, cliff,
-          cliffAmount, cancelableBySender, name, withdrawalFrequency, closed
-        ) VALUES (
-          @createdAt, @withdrawnAmount, @end, @lastWithdrawnAt, @address,
-          @start, @depositedAmount, @period, @amountPerPeriod, @cliff,
-          @cliffAmount, @cancelableBySender, @name, @withdrawalFrequency, @closed
-        )
-      `);
-      const result = stmt.run(sanitizedData);
-      return result;
+      
+      console.log("sanitized data", sanitizedData);
+
+      const { data, error } = await supabase
+        .from('contracts')
+        .insert([sanitizedData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error in createContract:', error);
       throw error;
     }
   },
 
-  getContract: (id) => {
-    const stmt = db.prepare('SELECT * FROM contracts WHERE id = ?');
-    const result = stmt.get(id);
-    if (result) {
-      // Convert integers back to booleans
-      result.cancelableBySender = Boolean(result.cancelableBySender);
-      result.closed = Boolean(result.closed);
+  getContract: async (id) => {
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getContract:', error);
+      throw error;
     }
-    return result;
   },
 
-  getAllContracts: () => {
-    const stmt = db.prepare('SELECT * FROM contracts');
-    const results = stmt.all();
-    // Convert integers back to booleans for all results
-    return results.map(result => ({
-      ...result,
-      cancelableBySender: Boolean(result.cancelableBySender),
-      closed: Boolean(result.closed)
-    }));
+  getAllContracts: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getAllContracts:', error);
+      throw error;
+    }
   },
 
-  getContractByMint: (address) => {
-    const stmt = db.prepare('SELECT * FROM contracts WHERE address = ?');
-    const result = stmt.get(address);
-    if (result) {
-      // Convert integers back to booleans
-      result.cancelableBySender = Boolean(result.cancelableBySender);
-      result.closed = Boolean(result.closed);
+  getContractByAddress: async (address) => {
+    console.log("getContractByAddress", address);
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('address', address)
+        .limit(1);
+
+      console.log("data", data);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getContractByAddress:', error);
+      throw error;
     }
-    return result;
   }
 };
 
-export default db;
+export default supabase;

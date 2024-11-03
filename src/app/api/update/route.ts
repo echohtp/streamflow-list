@@ -21,10 +21,12 @@ export async function GET(request: NextRequest) {
     const contracts = await dbOperations.getAllContracts();
    
     for (const contract of contracts) {
+      console.log("checking contract", contract.address);
       const streamData: IGetOneData = { id: contract.address };
       const stream = await solanaClient.getOne(streamData);
       if (stream) {
-        dbOperations.updateContract(stream, contract.address);
+        console.log("Updating contract", stream);
+        await dbOperations.updateContract(stream, contract.address);
       }
     }
     return NextResponse.json({ thanks: "thanks" });

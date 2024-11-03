@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       
       console.log("stream found");
       console.log(stream);
-      dbOperations.createContract(stream, data.address);
+      await dbOperations.createContract(stream, data.address);
       return NextResponse.json({ thanks: "thanks" });
     }else{
       return NextResponse.json({ error: "no valid stream found" });
